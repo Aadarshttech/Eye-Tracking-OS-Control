@@ -7,7 +7,9 @@ from tensorflow.keras import layers, models
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
-DATA_DIR = "../dataset"
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, "dataset")
 MODEL_SAVE_PATH = "gaze_model.keras"
 
 def load_data():

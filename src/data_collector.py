@@ -12,7 +12,9 @@ from mediapipe.tasks.python import vision
 
 # Paths
 LANDMARKER_PATH = "face_landmarker.task"
-DATA_DIR = "../dataset"
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, "dataset")
 
 # Eye / Iris landmark indices
 LEFT_IRIS = [474, 475, 476, 477]

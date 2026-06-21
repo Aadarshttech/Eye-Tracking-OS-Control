@@ -16,8 +16,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-LANDMARKER_PATH = "../models/face_landmarker.task"
-DATA_DIR = "../dataset"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LANDMARKER_PATH = os.path.join(BASE_DIR, "models", "face_landmarker.task")
+DATA_DIR = os.path.join(BASE_DIR, "dataset")
 
 LEFT_IRIS = [474, 475, 476, 477]
 RIGHT_IRIS = [469, 470, 471, 472]
