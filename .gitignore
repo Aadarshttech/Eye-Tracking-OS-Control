@@ -1,0 +1,26 @@
+# Environments
+.venv/
+.venv_new/
+env/
+venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# Models & Data
+*.keras
+*.tflite
+*.h5
+dataset/
+*.csv
+
+# OS generated files
+.DS_Store
+Thumbs.db
