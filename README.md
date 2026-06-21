@@ -1,52 +1,82 @@
-# GazeTrack: AI-Powered Eye Tracking for OS Control
+<div align="center">
+  <img src="https://img.shields.io/badge/Python-3.11+-blue.svg" alt="Python">
+  <img src="https://img.shields.io/badge/TensorFlow-2.15-orange.svg" alt="TensorFlow">
+  <img src="https://img.shields.io/badge/Flask-Web%20UI-green.svg" alt="Flask">
+  <img src="https://img.shields.io/badge/MediaPipe-Face%20Landmarks-blueviolet.svg" alt="MediaPipe">
+  
+  <h1>👁️ Eye Tracking OS Control 👁️</h1>
+  <p><b>A Machine Learning project that lets you control your computer mouse using only your eyes!</b></p>
+</div>
 
-GazeTrack is an advanced, AI-driven eye-tracking system designed to replace a standard computer mouse. By leveraging Google MediaPipe for rapid 3D facial landmark extraction and a lightweight custom neural network, GazeTrack translates your gaze into precise screen coordinates and uses intentional blinks as mouse clicks.
+---
 
-## Key Features
+## 🌟 Overview
+Welcome to the Eye Tracking OS Control project! This tool uses your standard webcam to track your eye movements, processes the data using a custom TensorFlow Neural Network, and translates your gaze into real-time on-screen mouse movements.
 
-- **Hybrid Landmark-AI Pipeline**: Combines the speed of MediaPipe's 468 3D facial landmarks with a custom-trained Neural Network for accurate, low-latency gaze prediction.
-- **Intentional Blink Detection**: Differentiates between natural, involuntary blinks (~150ms) and intentional "click" blinks (400ms+) using a time-series classifier.
-- **Advanced Jitter Reduction**: Implements a One Euro Filter to smooth cursor movements and prevent erratic screen jumping, providing a natural interaction.
-- **Real-Time Calibration**: A fast calibration UI maps predictions precisely to any monitor's dimensions, accounting for user position and screen size.
-- **Head Movement Compensation**: Incorporates head pose (pitch, yaw, roll) to ensure gaze remains accurate even when the user's head moves.
+**Features:**
+- 🎨 **Web-Based Data Collector:** A beautiful, responsive Flask app to comfortably collect your calibration data.
+- 🧠 **Deep Learning:** Uses Google MediaPipe for sub-millimeter facial landmarks and a custom TensorFlow model to predict screen coordinates.
+- 🖱️ **Live OS Control:** Take over your Windows mouse pointer hands-free.
 
-## Project Structure
+---
 
-- `data_collector.py`: Script to gather personalized gaze and blink data for training.
-- `train_gaze_model.py`: Script to train lightweight AI models using the collected data.
-- `eye_tracker.py`: Main execution script that runs the real-time tracking, applies smoothing filters, and interfaces with the OS.
-- `Eye_Tracking_Project_Guide.md`: Comprehensive roadmap and technical details of the project phases.
+## 📁 Repository Structure
 
-## Setup & Installation
+```text
+Eye-Tracking-OS-Control/
+│
+├── src/                      # 💻 Core Source Code
+│   ├── web_collector.py      # Flask Web UI for data collection
+│   ├── data_collector.py     # Legacy OpenCV data collector
+│   ├── train_gaze_model.py   # AI Training Script (TensorFlow)
+│   ├── eye_tracker.py        # Real-time OS mouse control
+│   └── templates/            # HTML/CSS for Web UI
+│
+├── models/                   # 🧠 ML Models & Weights
+│   ├── face_landmarker.task  # MediaPipe landmark model
+│   ├── best_eye_model.keras  # Saved Keras model
+│   └── eye_model.tflite      # Optimized TFLite model for speed
+│
+├── docs/                     # 📚 Documentation
+│   └── eye_tracking_roadmap.pdf
+│
+└── dataset/                  # 📊 CSV Training Data (Git Ignored)
+```
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/yourusername/GazeTrack.git
-   cd GazeTrack
-   ```
+---
 
-2. **Set up a virtual environment** (recommended):
-   ```bash
-   python -m venv .venv
-   # On Windows:
-   .venv\Scripts\activate
-   # On macOS/Linux:
-   source .venv/bin/activate
-   ```
+## 🚀 How to Use
 
-3. **Install dependencies**:
-   ```bash
-   pip install opencv-python mediapipe numpy tensorflow pyautogui
-   ```
+### 1. Collect Data
+Start the web UI server to collect your personal calibration data:
+```bash
+python src/web_collector.py
+```
+*Open your browser to `http://localhost:5000` and follow the on-screen target dot.*
 
-4. **Ensure Models are Present**:
-   Place `face_landmarker.task`, `best_eye_model.keras` or `eye_model.tflite` in the project root directory.
+### 2. Train the AI Model
+Once you've collected enough data, train the neural network:
+```bash
+python src/train_gaze_model.py
+```
+*This will generate a highly optimized `eye_model.tflite` in the `models/` folder.*
 
-## Usage
+### 3. Control Your Mouse!
+Run the live tracker to take control of your OS:
+```bash
+python src/eye_tracker.py
+```
 
-1. **Run Calibration and Tracking**:
-   ```bash
-   python eye_tracker.py
-   ```
-2. **Follow on-screen instructions** to complete the quick calibration.
-3. Use your eyes to move the cursor and perform an intentional blink (approx. 400-600ms) to click.
+---
+
+## 🛠️ Architecture
+
+1. **Webcam Input** ➔ **MediaPipe** extracts 478 3D facial landmarks (including precise iris coordinates).
+2. **Feature Engineering** ➔ Head pose (Pitch, Yaw, Roll) and normalized eye centers are calculated.
+3. **Neural Network** ➔ The features are fed into our custom TensorFlow Dense network.
+4. **Output** ➔ The network outputs predicted (X, Y) screen coordinates.
+5. **Action** ➔ `pyautogui` moves your system cursor.
+
+<div align="center">
+  <i>Built with ❤️ by Aadarsh</i>
+</div>

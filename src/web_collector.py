@@ -16,8 +16,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-LANDMARKER_PATH = "face_landmarker.task"
-DATA_DIR = "dataset"
+LANDMARKER_PATH = "../models/face_landmarker.task"
+DATA_DIR = "../dataset"
 
 LEFT_IRIS = [474, 475, 476, 477]
 RIGHT_IRIS = [469, 470, 471, 472]
@@ -25,6 +25,7 @@ RIGHT_IRIS = [469, 470, 471, 472]
 landmarker = None
 session_data = []
 session_user = ""
+session_type = ""
 session_name = ""
 is_recording = False
 
@@ -55,12 +56,13 @@ def index():
 
 @socketio.on('start_session')
 def handle_start_session(data):
-    global session_data, session_user, session_name, is_recording
+    global session_data, session_user, session_type, session_name, is_recording
     session_user = data.get('user', 'unknown')
+    session_type = data.get('session_type', 'standard')
     session_name = data.get('session_name', 'session')
     session_data = []
     is_recording = True
-    print(f"Started memory buffering for session: {session_name} by {session_user}")
+    print(f"Started memory buffering for session: {session_type} ({session_name}) by {session_user}")
     emit('session_started', {'status': 'success'})
 
 @socketio.on('discard_session')
@@ -73,7 +75,7 @@ def handle_discard_session():
 
 @socketio.on('save_session')
 def handle_save_session():
-    global session_data, session_user, session_name, is_recording
+    global session_data, session_user, session_type, session_name, is_recording
     is_recording = False
     if not session_data:
         print("No data to save.")
@@ -81,11 +83,11 @@ def handle_save_session():
         return
         
     os.makedirs(DATA_DIR, exist_ok=True)
-    filename = f"gaze_data_{session_user}_{session_name}_{int(time.time())}.csv"
+    filename = f"gaze_data_{session_user}_{session_type.replace(' ', '_')}_{session_name.replace(' ', '_')}_{int(time.time())}.csv"
     filepath = os.path.join(DATA_DIR, filename)
     
     csv_header = [
-        "timestamp", "user", "lighting", "screen_w", "screen_h", "cam_w", "cam_h",
+        "timestamp", "user", "session_type", "screen_w", "screen_h", "cam_w", "cam_h",
         "target_x", "target_y", 
         "head_pitch", "head_yaw", "head_roll",
         "l_iris_x", "l_iris_y", "l_iris_z", 
@@ -117,9 +119,8 @@ def handle_process_frame(data):
     cam_w = data['cam_w']
     cam_h = data['cam_h']
     user = data.get('user', 'unknown')
-    lighting = data.get('lighting', 'normal')
+    session_type_in = data.get('session_type', 'standard')
     
-    # Decode base64 JPEG from web
     try:
         header, encoded = image_data.split(",", 1)
         img_bytes = base64.b64decode(encoded)
@@ -129,7 +130,6 @@ def handle_process_frame(data):
         print("Error decoding image:", e)
         return
     
-    # MediaPipe
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
     
@@ -146,7 +146,7 @@ def handle_process_frame(data):
         
         timestamp_ms = int(time.time() * 1000)
         session_data.append([
-            timestamp_ms, user, lighting, screen_w, screen_h, cam_w, cam_h,
+            timestamp_ms, user, session_type_in, screen_w, screen_h, cam_w, cam_h,
             target_x, target_y,
             pitch, yaw, roll,
             lx, ly, lz,
