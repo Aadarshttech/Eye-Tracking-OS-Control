@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaze Data Collector - Web Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--surface-color);
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 { margin-top: 0; font-weight: 300; letter-spacing: 1px; }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: #cbd5e1;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        button:hover { background-color: var(--accent-hover); }
+        button.danger { background-color: var(--danger-color); }
+        button.danger:hover { background-color: #dc2626; }
+        button.success { background-color: var(--success-color); }
+        button.success:hover { background-color: #059669; }
+        button.accent { background-color: #64748b; }
+        button.accent:hover { background-color: #475569; }
+
+        /* Tracker UI */
+        #tracker-ui {
+            display: none;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 50;
+        }
+
+        #target-dot {
+            position: absolute;
+            width: 30px; height: 30px;
+            background: #ef4444;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+            transition: left 0.15s ease-out, top 0.15s ease-out;
+        }
+        
+        #target-dot::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px; height: 6px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        #controls-overlay {
+            position: absolute;
+            top: 20px; right: 20px;
+            display: flex; gap: 10px;
+        }
+
+        #controls-overlay button { width: auto; margin: 0; }
+
+        #status-bar {
+            position: absolute;
+            bottom: 20px; left: 20px;
+            font-family: monospace;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #cbd5e1;
+        }
+
+        .status-dot.active {
+            background: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+        }
+        
+        .status-dot.error {
+            background: var(--danger-color);
+            box-shadow: 0 0 8px var(--danger-color);
+        }
+
+        video {
+            position: absolute;
+            top: 20px; left: 20px;
+            width: 240px; height: 180px;
+            border-radius: 8px;
+            border: 2px solid #334155;
+            object-fit: cover;
+            transform: scaleX(-1);
+            opacity: 0.6; 
+        }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="panel">
+        <h1>Gaze Data Collector</h1>
+        <p style="color: #94a3b8; margin-bottom: 2rem;">Web-based Interactive Tracking</p>
+        
+        <div class="form-group">
+            <label for="username">Participant Name</label>
+            <input type="text" id="username" placeholder="e.g., Aadarsh" value="Aadarsh">
+        </div>
+
+        <div class="form-group">
+            <label for="session-name">Session Name</label>
+            <input type="text" id="session-name" placeholder="e.g., calibration_1" value="calibration_1">
+        </div>
+        
+        <div class="form-group">
+            <label for="lighting">Lighting Condition</label>
+            <input type="text" id="lighting" value="normal">
+        </div>
+        
+        <button id="btn-start-session">Start Session</button>
+    </div>
+
+    <!-- Summary UI -->
+    <div id="summary-ui" class="panel" style="display:none;">
+        <h1>Session Complete</h1>
+        <p style="color: #94a3b8; margin-bottom: 2rem;">You finished the data collection sequence.</p>
+        <p id="frames-summary" style="font-size: 1.2rem; margin-bottom: 2rem;"></p>
+        <button id="btn-save" class="success">Save Data to CSV</button>
+        <button id="btn-discard" class="danger">Discard Data</button>
+    </div>
+
+    <!-- Tracker UI -->
+    <div id="tracker-ui">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="capture-canvas"></canvas>
+        
+        <div id="target-dot"></div>
+        
+        <div id="controls-overlay">
+            <button id="btn-restart" class="accent">Restart</button>
+            <button id="btn-pause" class="success">Pause</button>
+            <button id="btn-finish" class="danger">Finish</button>
+        </div>
+        
+        <div id="status-bar">
+            <span id="tracking-indicator" class="status-dot"></span>
+            <span id="status-text">Waiting for camera...</span>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let videoStream = null;
+        let isRecording = false;
+        let isPaused = false;
+        let currentTarget = { x: 0, y: 0 };
+        let framesCapturedForTarget = 0;
+        let totalFramesCaptured = 0;
+        const TARGETS_REQUIRED = 50;
+        const FRAMES_PER_TARGET = 15;
+        let currentTargetIndex = 0;
+        
+        const dashboard = document.getElementById('dashboard');
+        const summaryUI = document.getElementById('summary-ui');
+        const trackerUI = document.getElementById('tracker-ui');
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('capture-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const targetDot = document.getElementById('target-dot');
+        const btnStart = document.getElementById('btn-start-session');
+        const btnPause = document.getElementById('btn-pause');
+        const btnFinish = document.getElementById('btn-finish');
+        const btnRestart = document.getElementById('btn-restart');
+        const btnSave = document.getElementById('btn-save');
+        const btnDiscard = document.getElementById('btn-discard');
+        const statusText = document.getElementById('status-text');
+        const framesSummary = document.getElementById('frames-summary');
+        const trackingIndicator = document.getElementById('tracking-indicator');
+
+        async function startCamera() {
+            try {
+                if (!videoStream) {
+                    videoStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { width: 640, height: 480 } 
+                    });
+                    video.srcObject = videoStream;
+                    video.onloadedmetadata = () => {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        statusText.innerText = "Camera ready";
+                    };
+                }
+            } catch (err) {
+                console.error("Camera access denied:", err);
+                statusText.innerText = "Error: Camera access denied";
+            }
+        }
+
+        function moveDot() {
+            const pad = 80;
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            
+            let tx, ty;
+            do {
+                tx = pad + Math.random() * (screenW - pad * 2);
+                ty = pad + Math.random() * (screenH - pad * 2);
+            } while (tx > screenW - 350 && ty < 100);
+
+            currentTarget = { x: tx, y: ty };
+            targetDot.style.left = `${tx}px`;
+            targetDot.style.top = `${ty}px`;
+            
+            framesCapturedForTarget = 0;
+            currentTargetIndex++;
+            statusText.innerText = `Target ${currentTargetIndex} / ${TARGETS_REQUIRED}`;
+        }
+
+        function captureAndSend() {
+            if (!isRecording) return;
+            if (isPaused) {
+                setTimeout(captureAndSend, 100);
+                return;
+            }
+
+            if (framesCapturedForTarget >= FRAMES_PER_TARGET) {
+                if (currentTargetIndex >= TARGETS_REQUIRED) {
+                    showSummary();
+                    return;
+                }
+                moveDot();
+            }
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+
+            socket.emit('process_frame', {
+                image: imageData,
+                target_x: currentTarget.x,
+                target_y: currentTarget.y,
+                screen_w: window.innerWidth,
+                screen_h: window.innerHeight,
+                cam_w: canvas.width,
+                cam_h: canvas.height,
+                user: document.getElementById('username').value,
+                lighting: document.getElementById('lighting').value
+            });
+
+            setTimeout(captureAndSend, 50); // ~20 FPS limit
+        }
+
+        socket.on('frame_result', (data) => {
+            if (data.success && !isPaused && isRecording) {
+                trackingIndicator.className = 'status-dot active';
+                framesCapturedForTarget++;
+                totalFramesCaptured++;
+            } else if (!data.success && !isPaused && isRecording) {
+                trackingIndicator.className = 'status-dot error';
+            }
+        });
+
+        function resetState() {
+            currentTargetIndex = 0;
+            framesCapturedForTarget = 0;
+            totalFramesCaptured = 0;
+            btnPause.innerText = 'Pause';
+            btnPause.className = 'success';
+            isPaused = false;
+            targetDot.style.opacity = '1';
+        }
+
+        btnStart.addEventListener('click', async () => {
+            dashboard.style.display = 'none';
+            trackerUI.style.display = 'block';
+            await startCamera();
+            
+            socket.emit('start_session', {
+                user: document.getElementById('username').value,
+                session_name: document.getElementById('session-name').value,
+                lighting: document.getElementById('lighting').value
+            });
+            
+            resetState();
+            isRecording = true;
+            moveDot();
+            captureAndSend();
+            document.documentElement.requestFullscreen().catch(e => console.log(e));
+        });
+
+        btnRestart.addEventListener('click', () => {
+            // Tell backend to discard and start fresh
+            socket.emit('discard_session');
+            socket.emit('start_session', {
+                user: document.getElementById('username').value,
+                session_name: document.getElementById('session-name').value,
+                lighting: document.getElementById('lighting').value
+            });
+            resetState();
+            moveDot();
+        });
+
+        btnPause.addEventListener('click', () => {
+            isPaused = !isPaused;
+            if (isPaused) {
+                btnPause.innerText = 'Resume';
+                btnPause.className = '';
+                targetDot.style.opacity = '0.5';
+                statusText.innerText = 'Paused';
+                trackingIndicator.className = 'status-dot';
+            } else {
+                btnPause.innerText = 'Pause';
+                btnPause.className = 'success';
+                targetDot.style.opacity = '1';
+                statusText.innerText = `Target ${currentTargetIndex} / ${TARGETS_REQUIRED}`;
+            }
+        });
+
+        function showSummary() {
+            isRecording = false;
+            trackerUI.style.display = 'none';
+            summaryUI.style.display = 'block';
+            framesSummary.innerText = `Successfully captured ${totalFramesCaptured} tracking frames.`;
+            
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(e => console.log(e));
+            }
+        }
+
+        btnFinish.addEventListener('click', showSummary);
+
+        btnSave.addEventListener('click', () => {
+            socket.emit('save_session');
+            summaryUI.style.display = 'none';
+            dashboard.style.display = 'block';
+        });
+
+        btnDiscard.addEventListener('click', () => {
+            socket.emit('discard_session');
+            summaryUI.style.display = 'none';
+            dashboard.style.display = 'block';
+        });
+
+    </script>
+</body>
+</html>
