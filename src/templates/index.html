@@ -3,408 +3,810 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gaze Data Collector - Web Edition</title>
+    <title>Gaze Data Collector — Research Edition</title>
+    <meta name="description" content="High-quality gaze data collection dashboard for eye tracking research">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
     <style>
+        /* ============================================================
+           Design System
+           ============================================================ */
         :root {
-            --bg-color: #0f172a;
-            --surface-color: #1e293b;
-            --text-color: #f8fafc;
-            --accent-color: #3b82f6;
-            --accent-hover: #2563eb;
-            --danger-color: #ef4444;
-            --success-color: #10b981;
+            --bg:          #06060c;
+            --surface:     #10101a;
+            --card:        #16162a;
+            --card-border: #1e1e38;
+            --primary:     #6366f1;
+            --primary-dim: rgba(99,102,241,.15);
+            --secondary:   #8b5cf6;
+            --success:     #10b981;
+            --success-dim: rgba(16,185,129,.15);
+            --warning:     #f59e0b;
+            --warning-dim: rgba(245,158,11,.15);
+            --danger:      #ef4444;
+            --danger-dim:  rgba(239,68,68,.15);
+            --text:        #f1f5f9;
+            --text-dim:    #94a3b8;
+            --text-muted:  #64748b;
+            --radius:      12px;
+            --radius-sm:   8px;
+            --shadow:      0 8px 32px rgba(0,0,0,.4);
+            --glass:       rgba(22,22,42,.75);
+            --glass-border:rgba(255,255,255,.06);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            margin: 0; padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            height: 100vh; overflow: hidden;
-            display: flex; flex-direction: column;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
         }
 
+        /* ============================================================
+           Background animation
+           ============================================================ */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 20% 30%, rgba(99,102,241,.06) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 60% at 80% 70%, rgba(139,92,246,.05) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* ============================================================
+           Shared components
+           ============================================================ */
         .panel {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--surface-color);
-            padding: 3rem; border-radius: 1rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            z-index: 100; text-align: center;
-            max-width: 500px; width: 100%;
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10;
+        }
+        .panel.hidden { display: none; }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            max-width: 640px; width: 92%;
+            box-shadow: var(--shadow);
+            position: relative; z-index: 1;
         }
 
-        h1 { margin-top: 0; font-weight: 300; letter-spacing: 1px; }
+        h1 {
+            font-size: 1.75rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: .25rem;
+        }
 
-        .form-group { margin-bottom: 1.5rem; text-align: left; }
-        label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: #cbd5e1; }
-        
+        .subtitle { color: var(--text-dim); font-size: .9rem; margin-bottom: 1.5rem; }
+
+        label {
+            display: block; font-size: .8rem; font-weight: 500;
+            color: var(--text-dim); margin-bottom: .4rem; letter-spacing: .02em;
+        }
+
         input, select {
-            width: 100%; padding: 0.75rem; border-radius: 0.5rem;
-            border: 1px solid #334155; background: #0f172a; color: white;
-            font-size: 1rem; box-sizing: border-box; appearance: none;
+            width: 100%; padding: .65rem .85rem;
+            background: var(--surface); color: var(--text);
+            border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+            font-family: inherit; font-size: .9rem;
+            transition: border-color .2s;
+            appearance: none;
+        }
+        input:focus, select:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-dim);
+        }
+        select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8'%3E%3Cpath d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 2rem; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+
+        /* Slider */
+        .range-group { margin-bottom: 1rem; }
+        .range-group .range-header { display: flex; justify-content: space-between; align-items: baseline; }
+        .range-group .range-value { font-size: .85rem; font-weight: 600; color: var(--primary); }
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 6px;
+            background: var(--surface); border-radius: 3px; border: none;
+            margin-top: .4rem; padding: 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 18px; height: 18px;
+            background: var(--primary); border-radius: 50%; cursor: pointer;
+            box-shadow: 0 0 8px rgba(99,102,241,.4);
         }
 
-        .guidelines-box {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid var(--accent-color);
-            padding: 1rem; margin-bottom: 1.5rem; color: #94a3b8;
-            font-size: 0.9rem; text-align: left; border-radius: 0 0.5rem 0.5rem 0;
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+            padding: .7rem 1.5rem; border: none; border-radius: var(--radius-sm);
+            font-family: inherit; font-size: .95rem; font-weight: 600;
+            cursor: pointer; transition: all .2s; width: 100%; margin-top: .25rem;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(99,102,241,.35); }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger  { background: var(--danger); color: #fff; }
+        .btn-danger:hover  { background: #dc2626; }
+        .btn-ghost   { background: transparent; color: var(--text-dim); border: 1px solid var(--card-border); }
+        .btn-ghost:hover   { border-color: var(--text-dim); color: var(--text); }
+        .btn-sm { padding: .5rem 1rem; font-size: .85rem; width: auto; }
+
+        /* Guidelines */
+        .guidelines {
+            background: var(--primary-dim); border-left: 3px solid var(--primary);
+            padding: .85rem 1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            color: var(--text-dim); font-size: .85rem; line-height: 1.5;
+            margin-bottom: 1.25rem;
         }
 
-        button {
-            background-color: var(--accent-color); color: white; border: none;
-            padding: 0.75rem 1.5rem; font-size: 1rem; border-radius: 0.5rem;
-            cursor: pointer; transition: all 0.2s; font-weight: 500;
-            width: 100%; margin-bottom: 0.5rem;
+        /* Stats bar */
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem;
+            margin-bottom: 1.25rem;
+        }
+        .stat-chip {
+            background: var(--surface); border-radius: var(--radius-sm);
+            padding: .6rem .8rem; text-align: center;
+            border: 1px solid var(--card-border);
+        }
+        .stat-chip .stat-value { font-size: 1.25rem; font-weight: 700; }
+        .stat-chip .stat-label { font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-top: .15rem; }
+
+        /* ============================================================
+           Dashboard
+           ============================================================ */
+        #dashboard .card { max-width: 580px; }
+
+        /* ============================================================
+           Tracker UI (fullscreen)
+           ============================================================ */
+        #tracker-ui {
+            position: fixed; inset: 0; background: var(--bg); z-index: 50;
         }
 
-        button:hover { background-color: var(--accent-hover); }
-        button.danger { background-color: var(--danger-color); }
-        button.danger:hover { background-color: #dc2626; }
-        button.success { background-color: var(--success-color); }
-        button.success:hover { background-color: #059669; }
-        button.accent { background-color: #64748b; }
-        button.accent:hover { background-color: #475569; }
+        /* Webcam preview */
+        #webcam {
+            position: fixed; top: 20px; left: 20px;
+            width: 200px; border-radius: var(--radius-sm);
+            border: 2px solid var(--card-border);
+            object-fit: cover; transform: scaleX(-1);
+            opacity: .5; z-index: 60;
+            transition: opacity .2s;
+        }
+        #webcam:hover { opacity: .9; }
 
-        /* Tracker UI */
-        #tracker-ui { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; }
+        /* Target dot + ring */
+        #target-container {
+            position: fixed;
+            transform: translate(-50%, -50%);
+            z-index: 55; pointer-events: none;
+            transition: left .12s ease-out, top .12s ease-out;
+        }
 
         #target-dot {
-            position: absolute; width: 30px; height: 30px; background: #ef4444; border-radius: 50%;
-            transform: translate(-50%, -50%); box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
-            transition: left 0.15s ease-out, top 0.15s ease-out;
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--danger);
+            box-shadow: 0 0 20px rgba(239,68,68,.5);
+            position: relative;
+            transition: background .3s, box-shadow .3s;
         }
-        
+        #target-dot.settling {
+            background: var(--warning);
+            box-shadow: 0 0 24px rgba(245,158,11,.5);
+            animation: pulse-settle .6s ease-in-out infinite;
+        }
+        #target-dot.capturing {
+            background: var(--success);
+            box-shadow: 0 0 24px rgba(16,185,129,.6);
+        }
         #target-dot::after {
-            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 6px; height: 6px; background: white; border-radius: 50%;
+            content: ''; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 4px; height: 4px; background: #fff; border-radius: 50%;
         }
 
-        #controls-overlay { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
-        #controls-overlay button { width: auto; margin: 0; }
+        @keyframes pulse-settle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
 
+        /* SVG progress ring */
+        .progress-ring {
+            position: absolute;
+            top: -11px; left: -11px;
+            width: 46px; height: 46px;
+            transform: rotate(-90deg);
+        }
+        .ring-bg {
+            fill: none; stroke: rgba(255,255,255,.08);
+            stroke-width: 3;
+        }
+        .ring-progress {
+            fill: none; stroke: var(--success);
+            stroke-width: 3; stroke-linecap: round;
+            transition: stroke-dashoffset .15s ease-out;
+        }
+
+        /* Controls overlay */
+        #controls-overlay {
+            position: fixed; top: 20px; right: 20px;
+            display: flex; gap: 8px; z-index: 60;
+        }
+
+        /* Status bar */
         #status-bar {
-            position: absolute; bottom: 20px; left: 20px; font-family: monospace;
-            background: rgba(15, 23, 42, 0.8); padding: 10px 15px; border-radius: 8px; border: 1px solid #334155;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(6,6,12,.85);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--card-border);
+            padding: 10px 24px;
+            display: flex; align-items: center; gap: 20px;
+            font-size: .82rem; z-index: 60;
         }
 
         .status-dot {
-            display: inline-block; width: 10px; height: 10px; border-radius: 50%;
-            margin-right: 8px; background: #cbd5e1;
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--text-muted); flex-shrink: 0;
+            transition: background .2s, box-shadow .2s;
         }
+        .status-dot.ok   { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-dot.warn { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
+        .status-dot.bad  { background: var(--danger);  box-shadow: 0 0 8px var(--danger);  }
 
-        .status-dot.active { background: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
-        .status-dot.error { background: var(--danger-color); box-shadow: 0 0 8px var(--danger-color); }
+        .status-label { color: var(--text-muted); }
+        .status-value { color: var(--text); font-weight: 600; }
+        .status-separator { width: 1px; height: 18px; background: var(--card-border); }
+        .status-group { display: flex; align-items: center; gap: 6px; }
 
-        video {
-            position: absolute; top: 20px; left: 20px; width: 240px; height: 180px;
-            border-radius: 8px; border: 2px solid #334155; object-fit: cover; transform: scaleX(-1); opacity: 0.6; 
-        }
-        canvas { display: none; }
-
+        /* Countdown */
         #countdown-overlay {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.85); z-index: 200;
-            justify-content: center; align-items: center;
-            font-size: 8rem; font-weight: 700; color: var(--accent-color);
-            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            position: fixed; inset: 0;
+            background: rgba(6,6,12,.88);
+            display: none; align-items: center; justify-content: center;
+            z-index: 200;
+            font-size: 8rem; font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 40px rgba(99,102,241,.4);
+            animation: countdown-pop .4s ease-out;
         }
+        @keyframes countdown-pop {
+            from { transform: scale(1.3); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+
+        /* Canvas (hidden) */
+        #capture-canvas { display: none; }
+
+        /* ============================================================
+           Summary panel
+           ============================================================ */
+        #summary .card { max-width: 500px; }
+        .summary-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin: 1.5rem 0; }
+        .summary-stat {
+            background: var(--surface); border-radius: var(--radius-sm);
+            padding: 1rem; text-align: center;
+            border: 1px solid var(--card-border);
+        }
+        .summary-stat .val { font-size: 1.5rem; font-weight: 700; }
+        .summary-stat .lbl { font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-top: .2rem; }
+        .summary-stat.good .val { color: var(--success); }
+        .summary-stat.warn .val { color: var(--warning); }
+        .btn-group { display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem; }
     </style>
 </head>
 <body>
 
-    <!-- Dashboard -->
+    <!-- ==================== DASHBOARD ==================== -->
     <div id="dashboard" class="panel">
-        <h1>Gaze Data Collector</h1>
-        <p style="color: #94a3b8; margin-bottom: 2rem;">Web-based Interactive Tracking</p>
-        
-        <div class="form-group">
-            <label for="username">Participant Name</label>
-            <input type="text" id="username" placeholder="e.g., Aadarsh" value="Aadarsh">
-        </div>
+        <div class="card">
+            <h1>👁️ Gaze Data Collector</h1>
+            <p class="subtitle">Research-grade data collection for eye tracking</p>
 
-        <div class="form-group">
-            <label for="session-name">Session Name</label>
-            <input type="text" id="session-name" placeholder="e.g., calibration_1" value="calibration_1">
-        </div>
+            <!-- Dataset stats -->
+            <div class="stats-bar" id="dataset-stats">
+                <div class="stat-chip">
+                    <div class="stat-value" id="stat-sessions">—</div>
+                    <div class="stat-label">Sessions</div>
+                </div>
+                <div class="stat-chip">
+                    <div class="stat-value" id="stat-frames">—</div>
+                    <div class="stat-label">Total Frames</div>
+                </div>
+                <div class="stat-chip">
+                    <div class="stat-value" id="stat-users">—</div>
+                    <div class="stat-label">Users</div>
+                </div>
+            </div>
 
-        <div class="form-group">
-            <label for="session-type">Session Type</label>
-            <select id="session-type">
-                <option value="standard">Standard Session</option>
-                <option value="slouching">Slouching / Angled</option>
-                <option value="dim_lighting">Dim Lighting</option>
-                <option value="head_movement">Head Movement</option>
-            </select>
-        </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">Participant Name</label>
+                    <input type="text" id="username" placeholder="e.g., Aadarsh" value="Aadarsh">
+                </div>
+                <div class="form-group">
+                    <label for="session-name">Session Name</label>
+                    <input type="text" id="session-name" placeholder="e.g., session_1" value="session_1">
+                </div>
+            </div>
 
-        <div id="guidelines" class="guidelines-box">
-            Sit up straight with normal room lighting. Keep your head relatively still and follow the dot with your eyes.
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="session-type">Session Type</label>
+                    <select id="session-type">
+                        <option value="standard">Standard</option>
+                        <option value="dim_lighting">Dim Lighting</option>
+                        <option value="bright_lighting">Bright / Backlit</option>
+                        <option value="slouching">Slouching / Lean</option>
+                        <option value="head_movement">Head Movement</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="collection-mode">Target Pattern</label>
+                    <select id="collection-mode">
+                        <option value="mixed" selected>Mixed (Grid + Random)</option>
+                        <option value="grid">Grid Only</option>
+                        <option value="random">Random Only</option>
+                        <option value="edges">Edges & Corners</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="range-group">
+                    <div class="range-header">
+                        <label for="target-count">Number of Targets</label>
+                        <span class="range-value" id="target-count-val">80</span>
+                    </div>
+                    <input type="range" id="target-count" min="20" max="200" step="10" value="80">
+                </div>
+                <div class="range-group">
+                    <div class="range-header">
+                        <label for="frames-per-target">Frames per Target</label>
+                        <span class="range-value" id="fpt-val">15</span>
+                    </div>
+                    <input type="range" id="frames-per-target" min="5" max="30" step="1" value="15">
+                </div>
+            </div>
+
+            <div class="guidelines" id="guidelines">
+                Sit up straight with normal room lighting. Keep your head relatively still and follow the red dot <b>only with your eyes</b>. Don't move your head.
+            </div>
+
+            <button class="btn btn-primary" id="btn-start">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Start Session
+            </button>
         </div>
-        
-        <button id="btn-start-session">Start Session</button>
     </div>
 
-    <!-- Summary UI -->
-    <div id="summary-ui" class="panel" style="display:none;">
-        <h1>Session Complete</h1>
-        <p style="color: #94a3b8; margin-bottom: 2rem;">You finished the data collection sequence.</p>
-        <p id="frames-summary" style="font-size: 1.2rem; margin-bottom: 2rem;"></p>
-        <button id="btn-save" class="success">Save Data to CSV</button>
-        <button id="btn-discard" class="danger">Discard Data</button>
-    </div>
-
-    <!-- Tracker UI -->
-    <div id="tracker-ui">
+    <!-- ==================== TRACKER UI ==================== -->
+    <div id="tracker-ui" class="panel hidden">
         <video id="webcam" autoplay playsinline></video>
         <canvas id="capture-canvas"></canvas>
-        
-        <div id="target-dot"></div>
-        
-        <div id="countdown-overlay">3</div>
-        
-        <div id="controls-overlay">
-            <button id="btn-restart" class="accent">Restart</button>
-            <button id="btn-pause" class="success">Pause</button>
-            <button id="btn-finish" class="danger">Finish</button>
+
+        <div id="target-container">
+            <div id="target-dot" class="settling"></div>
+            <svg class="progress-ring" viewBox="0 0 46 46">
+                <circle class="ring-bg" cx="23" cy="23" r="20" />
+                <circle id="ring-progress" class="ring-progress" cx="23" cy="23" r="20"
+                        stroke-dasharray="125.66" stroke-dashoffset="125.66" />
+            </svg>
         </div>
-        
+
+        <div id="controls-overlay">
+            <button class="btn btn-ghost btn-sm" id="btn-pause">⏸ Pause</button>
+            <button class="btn btn-danger btn-sm" id="btn-finish">⏹ Finish</button>
+        </div>
+
         <div id="status-bar">
-            <span id="tracking-indicator" class="status-dot"></span>
-            <span id="status-text">Waiting for camera...</span>
+            <div class="status-group">
+                <div class="status-dot" id="tracking-dot"></div>
+                <span class="status-value" id="status-text">Initialising…</span>
+            </div>
+            <div class="status-separator"></div>
+            <div class="status-group">
+                <span class="status-label">Target</span>
+                <span class="status-value" id="target-counter">0 / 0</span>
+            </div>
+            <div class="status-separator"></div>
+            <div class="status-group">
+                <span class="status-label">Frames</span>
+                <span class="status-value" id="frame-counter">0</span>
+            </div>
+            <div class="status-separator"></div>
+            <div class="status-group">
+                <span class="status-label">Quality</span>
+                <span class="status-value" id="quality-label">—</span>
+            </div>
+        </div>
+
+        <div id="countdown-overlay">3</div>
+    </div>
+
+    <!-- ==================== SUMMARY ==================== -->
+    <div id="summary" class="panel hidden">
+        <div class="card" style="text-align:center;">
+            <h1>Session Complete ✓</h1>
+            <p class="subtitle">Review your collection before saving.</p>
+
+            <div class="summary-stats">
+                <div class="summary-stat good">
+                    <div class="val" id="sum-frames">0</div>
+                    <div class="lbl">Frames</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="val" id="sum-duration">0s</div>
+                    <div class="lbl">Duration</div>
+                </div>
+                <div class="summary-stat" id="sum-quality-chip">
+                    <div class="val" id="sum-quality">0%</div>
+                    <div class="lbl">Quality</div>
+                </div>
+            </div>
+            <p id="sum-detail" style="font-size:.82rem;color:var(--text-muted);margin-bottom:.5rem;"></p>
+
+            <div class="btn-group">
+                <button class="btn btn-success" id="btn-save">💾 Save to CSV</button>
+                <button class="btn btn-danger" id="btn-discard">🗑️ Discard</button>
+                <button class="btn btn-ghost" id="btn-new">↩ New Session</button>
+            </div>
         </div>
     </div>
 
+    <!-- ==================== JAVASCRIPT ==================== -->
     <script>
-        const socket = io();
-        let videoStream = null;
-        let isRecording = false;
-        let isPaused = false;
-        let currentTarget = { x: 0, y: 0 };
-        let framesCapturedForTarget = 0;
-        let totalFramesCaptured = 0;
-        const TARGETS_REQUIRED = 50;
-        const FRAMES_PER_TARGET = 15;
-        let currentTargetIndex = 0;
-        
-        const dashboard = document.getElementById('dashboard');
-        const summaryUI = document.getElementById('summary-ui');
-        const trackerUI = document.getElementById('tracker-ui');
-        const countdownOverlay = document.getElementById('countdown-overlay');
-        const video = document.getElementById('webcam');
-        const canvas = document.getElementById('capture-canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const targetDot = document.getElementById('target-dot');
-        const btnStart = document.getElementById('btn-start-session');
-        const btnPause = document.getElementById('btn-pause');
-        const btnFinish = document.getElementById('btn-finish');
-        const btnRestart = document.getElementById('btn-restart');
-        const btnSave = document.getElementById('btn-save');
-        const btnDiscard = document.getElementById('btn-discard');
-        const statusText = document.getElementById('status-text');
-        const framesSummary = document.getElementById('frames-summary');
-        const trackingIndicator = document.getElementById('tracking-indicator');
-        const sessionTypeSelect = document.getElementById('session-type');
-        const guidelinesText = document.getElementById('guidelines');
+    (() => {
+        'use strict';
 
-        const guidelines = {
-            "standard": "Sit up straight with normal room lighting. Keep your head relatively still and follow the dot with your eyes.",
-            "slouching": "Slouch down or lean closer to the screen. This teaches the AI how to handle different depths and posture angles.",
-            "dim_lighting": "Turn off the main room light or close the window blinds. This tests the camera's ability to track in low contrast.",
-            "head_movement": "While looking at the dot, slightly tilt your head left or right. Don't keep your neck perfectly stiff."
+        // ---- elements ----
+        const $ = id => document.getElementById(id);
+        const dashboard   = $('dashboard');
+        const trackerUI   = $('tracker-ui');
+        const summaryUI   = $('summary');
+        const countdown   = $('countdown-overlay');
+        const video       = $('webcam');
+        const canvas      = $('capture-canvas');
+        const ctx         = canvas.getContext('2d', { willReadFrequently: true });
+        const targetCont  = $('target-container');
+        const targetDot   = $('target-dot');
+        const ringProg    = $('ring-progress');
+        const btnStart    = $('btn-start');
+        const btnPause    = $('btn-pause');
+        const btnFinish   = $('btn-finish');
+        const btnSave     = $('btn-save');
+        const btnDiscard  = $('btn-discard');
+        const btnNew      = $('btn-new');
+        const statusText  = $('status-text');
+        const trackDot    = $('tracking-dot');
+        const targetCounterEl = $('target-counter');
+        const frameCounterEl  = $('frame-counter');
+        const qualityLabel    = $('quality-label');
+        const guidelinesEl    = $('guidelines');
+        const targetCountSlider  = $('target-count');
+        const targetCountVal     = $('target-count-val');
+        const fptSlider          = $('frames-per-target');
+        const fptVal             = $('fpt-val');
+
+        const CIRCUMFERENCE = 2 * Math.PI * 20; // ring r=20
+        const SETTLE_MS = 500; // settle time before recording
+
+        // ---- state ----
+        let socket = null;
+        let videoStream  = null;
+        let isRecording  = false;
+        let isPaused     = false;
+        let targets      = [];
+        let framesPerTarget = 15;
+        let currentTargetIdx = 0;
+        let framesCapturedForTarget = 0;
+        let totalFramesCaptured     = 0;
+        let goodFrames = 0;
+        let poorFrames = 0;
+        let sessionStartTime = 0;
+        let settleTimeout = null;
+        let isSettled = false;
+        let waitingForAck = false;  // flow control
+
+        // ---- audio ----
+        let audioCtx = null;
+        function beep(freq = 600, ms = 80, vol = 0.06) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.frequency.value = freq; gain.gain.value = vol;
+                osc.start(); osc.stop(audioCtx.currentTime + ms / 1000);
+            } catch (_) { /* audio not available */ }
+        }
+
+        // ---- guidelines text ----
+        const guidelinesMap = {
+            standard:         'Sit up straight with <b>normal room lighting</b>. Keep your head still and follow the dot <b>only with your eyes</b>.',
+            dim_lighting:     'Turn off the main light or close blinds. This tests the camera in <b>low-contrast conditions</b>. Keep your head still.',
+            bright_lighting:  'Sit with a bright light or window <b>behind you</b>. This tests the camera under <b>backlit / overexposed</b> conditions.',
+            slouching:        'Lean forward, backward, or slouch. This teaches the model how to handle <b>different depths and postures</b>.',
+            head_movement:    'While looking at the dot, <b>slightly tilt your head</b> left/right or nod gently. Don\'t keep your neck perfectly stiff.',
         };
 
-        sessionTypeSelect.addEventListener('change', (e) => {
-            guidelinesText.innerText = guidelines[e.target.value];
+        $('session-type').addEventListener('change', e => {
+            guidelinesEl.innerHTML = guidelinesMap[e.target.value] || '';
         });
 
+        // ---- sliders ----
+        targetCountSlider.addEventListener('input', () => { targetCountVal.textContent = targetCountSlider.value; });
+        fptSlider.addEventListener('input', () => { fptVal.textContent = fptSlider.value; });
+
+        // ---- connect socket ----
+        socket = io();
+
+        // ---- fetch dataset stats on load ----
+        fetch('/api/dataset_stats')
+            .then(r => r.json())
+            .then(s => {
+                $('stat-sessions').textContent = s.total_sessions;
+                $('stat-frames').textContent = s.total_frames.toLocaleString();
+                $('stat-users').textContent = Object.keys(s.users).length;
+            })
+            .catch(() => {});
+
+        // ---- camera ----
         async function startCamera() {
+            if (videoStream) return;
             try {
-                if (!videoStream) {
-                    videoStream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { width: 640, height: 480 } 
-                    });
-                    video.srcObject = videoStream;
-                    video.onloadedmetadata = () => {
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        statusText.innerText = "Camera ready";
-                    };
-                }
-            } catch (err) {
-                console.error("Camera access denied:", err);
-                statusText.innerText = "Error: Camera access denied";
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 480 } }
+                });
+                video.srcObject = videoStream;
+                video.onloadedmetadata = () => {
+                    canvas.width  = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                };
+            } catch (e) {
+                console.error('Camera error:', e);
+                statusText.textContent = '⚠ Camera access denied';
             }
         }
 
-        function moveDot() {
-            const pad = 80;
-            const screenW = window.innerWidth;
-            const screenH = window.innerHeight;
-            
-            let tx, ty;
-            do {
-                tx = pad + Math.random() * (screenW - pad * 2);
-                ty = pad + Math.random() * (screenH - pad * 2);
-            } while (tx > screenW - 350 && ty < 100);
+        // ---- show / hide panels ----
+        function show(panel) {
+            [dashboard, trackerUI, summaryUI].forEach(p => p.classList.add('hidden'));
+            panel.classList.remove('hidden');
+        }
 
-            currentTarget = { x: tx, y: ty };
-            targetDot.style.left = `${tx}px`;
-            targetDot.style.top = `${ty}px`;
-            
+        // ---- progress ring ----
+        function setRingProgress(ratio) {
+            const offset = CIRCUMFERENCE * (1 - Math.min(ratio, 1));
+            ringProg.style.strokeDashoffset = offset;
+        }
+
+        // ---- move to target ----
+        function moveToTarget(idx) {
+            if (idx >= targets.length) { finishSession(); return; }
+
+            currentTargetIdx = idx;
             framesCapturedForTarget = 0;
-            currentTargetIndex++;
-            statusText.innerText = `Target ${currentTargetIndex} / ${TARGETS_REQUIRED}`;
+            setRingProgress(0);
+
+            const t = targets[idx];
+            targetCont.style.left = t.x + 'px';
+            targetCont.style.top  = t.y + 'px';
+
+            // Settle phase
+            isSettled = false;
+            targetDot.className = 'settling';
+            beep(500, 60);
+
+            targetCounterEl.textContent = `${idx + 1} / ${targets.length}`;
+            statusText.textContent = 'Settling…';
+
+            clearTimeout(settleTimeout);
+            settleTimeout = setTimeout(() => {
+                isSettled = true;
+                targetDot.className = 'capturing';
+                statusText.textContent = 'Capturing';
+                beep(800, 40);
+                captureAndSend();
+            }, SETTLE_MS);
         }
 
+        // ---- capture loop (ack-driven flow control) ----
         function captureAndSend() {
-            if (!isRecording) return;
-            if (isPaused) {
-                setTimeout(captureAndSend, 100);
-                return;
-            }
+            if (!isRecording || isPaused || !isSettled || waitingForAck) return;
 
-            if (framesCapturedForTarget >= FRAMES_PER_TARGET) {
-                if (currentTargetIndex >= TARGETS_REQUIRED) {
-                    showSummary();
-                    return;
-                }
-                moveDot();
+            if (framesCapturedForTarget >= framesPerTarget) {
+                moveToTarget(currentTargetIdx + 1);
+                return;
             }
 
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            const t = targets[currentTargetIdx];
 
+            waitingForAck = true;
             socket.emit('process_frame', {
                 image: imageData,
-                target_x: currentTarget.x,
-                target_y: currentTarget.y,
+                target_x: t.x,
+                target_y: t.y,
+                target_type: t.type || 'unknown',
                 screen_w: window.innerWidth,
                 screen_h: window.innerHeight,
                 cam_w: canvas.width,
                 cam_h: canvas.height,
-                user: document.getElementById('username').value,
-                session_type: document.getElementById('session-type').value
             });
-
-            setTimeout(captureAndSend, 50); 
         }
 
-        socket.on('frame_result', (data) => {
-            if (data.success && !isPaused && isRecording) {
-                trackingIndicator.className = 'status-dot active';
+        socket.on('frame_result', data => {
+            waitingForAck = false;
+
+            if (!isRecording || isPaused) return;
+
+            if (data.success) {
                 framesCapturedForTarget++;
                 totalFramesCaptured++;
-            } else if (!data.success && !isPaused && isRecording) {
-                trackingIndicator.className = 'status-dot error';
+                if (data.quality === 'good') goodFrames++; else poorFrames++;
+
+                trackDot.className = 'status-dot ok';
+                setRingProgress(framesCapturedForTarget / framesPerTarget);
+                frameCounterEl.textContent = totalFramesCaptured;
+
+                const totalQ = goodFrames + poorFrames;
+                qualityLabel.textContent = totalQ > 0 ? Math.round(goodFrames / totalQ * 100) + '%' : '—';
+            } else {
+                trackDot.className = 'status-dot bad';
             }
+
+            // Next frame (via rAF to avoid blocking)
+            requestAnimationFrame(captureAndSend);
         });
 
-        function resetState() {
-            currentTargetIndex = 0;
+        // ---- countdown ----
+        function runCountdown(cb) {
+            countdown.style.display = 'flex';
+            let n = 3;
+            countdown.textContent = n;
+            beep(440, 150);
+
+            const iv = setInterval(() => {
+                n--;
+                if (n > 0) {
+                    countdown.textContent = n;
+                    beep(440, 150);
+                } else if (n === 0) {
+                    countdown.textContent = 'GO';
+                    beep(880, 200, 0.08);
+                } else {
+                    clearInterval(iv);
+                    countdown.style.display = 'none';
+                    cb();
+                }
+            }, 850);
+        }
+
+        // ---- start session ----
+        btnStart.addEventListener('click', async () => {
+            show(trackerUI);
+            await startCamera();
+
+            try { await document.documentElement.requestFullscreen(); } catch (_) {}
+
+            runCountdown(() => {
+                const cfg = {
+                    user:             $('username').value || 'unknown',
+                    session_type:     $('session-type').value,
+                    session_name:     $('session-name').value || 'session',
+                    collection_mode:  $('collection-mode').value,
+                    target_count:     parseInt(targetCountSlider.value),
+                    frames_per_target:parseInt(fptSlider.value),
+                    screen_w:         window.innerWidth,
+                    screen_h:         window.innerHeight,
+                };
+                socket.emit('start_session', cfg);
+            });
+        });
+
+        socket.on('session_started', data => {
+            targets = data.targets;
+            framesPerTarget = data.frames_per_target;
+
+            currentTargetIdx = 0;
             framesCapturedForTarget = 0;
             totalFramesCaptured = 0;
-            btnPause.innerText = 'Pause';
-            btnPause.className = 'success';
+            goodFrames = 0;
+            poorFrames = 0;
+            sessionStartTime = Date.now();
+            isRecording = true;
             isPaused = false;
-            targetDot.style.opacity = '1';
-        }
+            waitingForAck = false;
 
-        function startCountdown(callback) {
-            countdownOverlay.style.display = 'flex';
-            let count = 3;
-            countdownOverlay.innerText = count;
-            isRecording = false; // pause recording during countdown
-            
-            const interval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    countdownOverlay.innerText = count;
-                } else if (count === 0) {
-                    countdownOverlay.innerText = "GO!";
-                } else {
-                    clearInterval(interval);
-                    countdownOverlay.style.display = 'none';
-                    callback();
-                }
-            }, 1000);
-        }
+            btnPause.textContent = '⏸ Pause';
 
-        btnStart.addEventListener('click', async () => {
-            dashboard.style.display = 'none';
-            trackerUI.style.display = 'block';
-            await startCamera();
-            document.documentElement.requestFullscreen().catch(e => console.log(e));
-            
-            startCountdown(() => {
-                socket.emit('start_session', {
-                    user: document.getElementById('username').value,
-                    session_type: document.getElementById('session-type').value
-                });
-                resetState();
-                isRecording = true;
-                moveDot();
-                captureAndSend();
-            });
+            moveToTarget(0);
         });
 
-        btnRestart.addEventListener('click', () => {
-            socket.emit('discard_session');
-            targetDot.style.opacity = '0'; // hide dot during countdown
-            
-            startCountdown(() => {
-                socket.emit('start_session', {
-                    user: document.getElementById('username').value,
-                    session_type: document.getElementById('session-type').value
-                });
-                resetState();
-                isRecording = true;
-                moveDot();
-            });
-        });
-
+        // ---- pause ----
         btnPause.addEventListener('click', () => {
             isPaused = !isPaused;
             if (isPaused) {
-                btnPause.innerText = 'Resume';
-                btnPause.className = '';
-                targetDot.style.opacity = '0.5';
-                statusText.innerText = 'Paused';
-                trackingIndicator.className = 'status-dot';
+                btnPause.textContent = '▶ Resume';
+                targetDot.style.opacity = '0.3';
+                statusText.textContent = 'Paused';
+                trackDot.className = 'status-dot';
             } else {
-                btnPause.innerText = 'Pause';
-                btnPause.className = 'success';
+                btnPause.textContent = '⏸ Pause';
                 targetDot.style.opacity = '1';
-                statusText.innerText = `Target ${currentTargetIndex} / ${TARGETS_REQUIRED}`;
+                // Re-settle the current target
+                moveToTarget(currentTargetIdx);
             }
         });
 
-        function showSummary() {
+        // ---- finish ----
+        function finishSession() {
             isRecording = false;
-            trackerUI.style.display = 'none';
-            summaryUI.style.display = 'block';
-            framesSummary.innerText = `Successfully captured ${totalFramesCaptured} tracking frames.`;
-            
-            if (document.fullscreenElement) {
-                document.exitFullscreen().catch(e => console.log(e));
-            }
+            clearTimeout(settleTimeout);
+            beep(660, 200, 0.08);
+
+            const elapsed = Math.round((Date.now() - sessionStartTime) / 1000);
+            const totalQ = goodFrames + poorFrames;
+            const qPct = totalQ > 0 ? Math.round(goodFrames / totalQ * 100) : 0;
+
+            $('sum-frames').textContent   = totalFramesCaptured;
+            $('sum-duration').textContent = elapsed < 60 ? elapsed + 's' : Math.floor(elapsed/60) + 'm ' + (elapsed%60) + 's';
+            $('sum-quality').textContent  = qPct + '%';
+            $('sum-detail').textContent   = `${goodFrames} good · ${poorFrames} poor · ${totalFramesCaptured} saved`;
+
+            const chip = $('sum-quality-chip');
+            chip.className = 'summary-stat ' + (qPct >= 80 ? 'good' : 'warn');
+
+            try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {}
+            show(summaryUI);
         }
 
-        btnFinish.addEventListener('click', showSummary);
+        btnFinish.addEventListener('click', finishSession);
 
+        // ---- save / discard ----
         btnSave.addEventListener('click', () => {
             socket.emit('save_session');
-            summaryUI.style.display = 'none';
-            dashboard.style.display = 'block';
+        });
+
+        socket.on('session_saved', data => {
+            if (data.status === 'success') {
+                alert(`✅ Saved ${data.frames} frames to ${data.file}`);
+            } else if (data.status === 'empty') {
+                alert('No data to save.');
+            }
+            show(dashboard);
+            // Refresh stats
+            fetch('/api/dataset_stats').then(r=>r.json()).then(s => {
+                $('stat-sessions').textContent = s.total_sessions;
+                $('stat-frames').textContent = s.total_frames.toLocaleString();
+                $('stat-users').textContent = Object.keys(s.users).length;
+            }).catch(()=>{});
         });
 
         btnDiscard.addEventListener('click', () => {
-            socket.emit('discard_session');
-            summaryUI.style.display = 'none';
-            dashboard.style.display = 'block';
+            if (confirm('Discard all captured data for this session?')) {
+                socket.emit('discard_session');
+                show(dashboard);
+            }
         });
 
+        btnNew.addEventListener('click', () => {
+            socket.emit('discard_session');
+            show(dashboard);
+        });
+
+    })();
     </script>
 </body>
 </html>
