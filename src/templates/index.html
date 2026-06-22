@@ -13,50 +13,41 @@
            Design System
            ============================================================ */
         :root {
-            --bg:          #06060c;
-            --surface:     #10101a;
-            --card:        #16162a;
-            --card-border: #1e1e38;
-            --primary:     #6366f1;
-            --primary-dim: rgba(99,102,241,.15);
-            --secondary:   #8b5cf6;
+            --bg:          #09090b;
+            --surface:     #18181b;
+            --card:        #18181b;
+            --card-border: #27272a;
+            --primary:     #3b82f6;
+            --primary-dim: rgba(59,130,246,.15);
+            --secondary:   #60a5fa;
             --success:     #10b981;
             --success-dim: rgba(16,185,129,.15);
             --warning:     #f59e0b;
             --warning-dim: rgba(245,158,11,.15);
             --danger:      #ef4444;
             --danger-dim:  rgba(239,68,68,.15);
-            --text:        #f1f5f9;
-            --text-dim:    #94a3b8;
-            --text-muted:  #64748b;
-            --radius:      12px;
-            --radius-sm:   8px;
-            --shadow:      0 8px 32px rgba(0,0,0,.4);
-            --glass:       rgba(22,22,42,.75);
-            --glass-border:rgba(255,255,255,.06);
+            --text:        #f8fafc;
+            --text-dim:    #a1a1aa;
+            --text-muted:  #71717a;
+            --radius:      16px;
+            --radius-sm:   10px;
+            --shadow:      0 12px 40px -12px rgba(0,0,0,0.8);
+            --glass:       rgba(24,24,27,.8);
+            --glass-border:rgba(255,255,255,.08);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* ============================================================
-           Background animation
-           ============================================================ */
-        body::before {
-            content: '';
-            position: fixed; inset: 0;
-            background:
-                radial-gradient(ellipse 60% 50% at 20% 30%, rgba(99,102,241,.06) 0%, transparent 70%),
-                radial-gradient(ellipse 50% 60% at 80% 70%, rgba(139,92,246,.05) 0%, transparent 70%);
-            pointer-events: none; z-index: 0;
-        }
+        /* Removed background blobs for a cleaner look */
 
         /* ============================================================
            Shared components
@@ -72,106 +63,225 @@
             background: var(--card);
             border: 1px solid var(--card-border);
             border-radius: var(--radius);
-            padding: 2.5rem;
+            padding: 3rem;
             max-width: 640px; width: 92%;
             box-shadow: var(--shadow);
             position: relative; z-index: 1;
         }
 
         h1 {
-            font-size: 1.75rem; font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: .25rem;
+            font-size: 1.8rem; font-weight: 600;
+            color: var(--text);
+            margin-bottom: .3rem;
+            letter-spacing: -0.02em;
         }
 
-        .subtitle { color: var(--text-dim); font-size: .9rem; margin-bottom: 1.5rem; }
+        .subtitle { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 2rem; font-weight: 400; }
 
         label {
-            display: block; font-size: .8rem; font-weight: 500;
-            color: var(--text-dim); margin-bottom: .4rem; letter-spacing: .02em;
+            display: block; font-size: .85rem; font-weight: 500;
+            color: var(--text); margin-bottom: .5rem;
         }
 
         input, select {
-            width: 100%; padding: .65rem .85rem;
-            background: var(--surface); color: var(--text);
+            width: 100%; padding: .75rem 1rem;
+            background: var(--bg); color: var(--text);
             border: 1px solid var(--card-border); border-radius: var(--radius-sm);
-            font-family: inherit; font-size: .9rem;
-            transition: border-color .2s;
+            font-family: inherit; font-size: .95rem;
+            transition: all .2s ease;
             appearance: none;
         }
         input:focus, select:focus {
             outline: none; border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-dim);
+            box-shadow: 0 0 0 4px var(--primary-dim);
+            background: var(--surface);
         }
-        select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8'%3E%3Cpath d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 2rem; }
+        select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2371717a'%3E%3Cpath d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 2.5rem; }
 
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-        .form-group { margin-bottom: 1rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.5rem; }
 
         /* Slider */
-        .range-group { margin-bottom: 1rem; }
-        .range-group .range-header { display: flex; justify-content: space-between; align-items: baseline; }
-        .range-group .range-value { font-size: .85rem; font-weight: 600; color: var(--primary); }
+        .range-group { margin-bottom: 1.5rem; }
+        .range-group .range-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .6rem; }
+        .range-group .range-value { font-size: .9rem; font-weight: 600; color: var(--text); background: var(--bg); padding: .2rem .6rem; border-radius: 6px; border: 1px solid var(--card-border); }
         input[type="range"] {
             -webkit-appearance: none; width: 100%; height: 6px;
-            background: var(--surface); border-radius: 3px; border: none;
+            background: var(--bg); border-radius: 3px; border: 1px solid var(--card-border);
             margin-top: .4rem; padding: 0;
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 18px; height: 18px;
-            background: var(--primary); border-radius: 50%; cursor: pointer;
-            box-shadow: 0 0 8px rgba(99,102,241,.4);
+            -webkit-appearance: none; width: 20px; height: 20px;
+            background: var(--text); border-radius: 50%; cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,.5);
+            border: 2px solid var(--surface);
         }
 
         /* Buttons */
         .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-            padding: .7rem 1.5rem; border: none; border-radius: var(--radius-sm);
-            font-family: inherit; font-size: .95rem; font-weight: 600;
-            cursor: pointer; transition: all .2s; width: 100%; margin-top: .25rem;
+            display: inline-flex; align-items: center; justify-content: center; gap: .6rem;
+            padding: .85rem 1.5rem; border: none; border-radius: var(--radius-sm);
+            font-family: inherit; font-size: .95rem; font-weight: 500;
+            cursor: pointer; transition: all .2s ease; width: 100%; margin-top: .5rem;
         }
-        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(99,102,241,.35); }
+        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39); }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.23); }
         .btn-success { background: var(--success); color: #fff; }
         .btn-success:hover { background: #059669; }
         .btn-danger  { background: var(--danger); color: #fff; }
         .btn-danger:hover  { background: #dc2626; }
-        .btn-ghost   { background: transparent; color: var(--text-dim); border: 1px solid var(--card-border); }
-        .btn-ghost:hover   { border-color: var(--text-dim); color: var(--text); }
-        .btn-sm { padding: .5rem 1rem; font-size: .85rem; width: auto; }
+        .btn-ghost   { background: var(--bg); color: var(--text); border: 1px solid var(--card-border); }
+        .btn-ghost:hover   { border-color: var(--text-dim); background: var(--surface); }
+        .btn-sm { padding: .6rem 1.2rem; font-size: .85rem; width: auto; }
 
         /* Guidelines */
         .guidelines {
-            background: var(--primary-dim); border-left: 3px solid var(--primary);
-            padding: .85rem 1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-            color: var(--text-dim); font-size: .85rem; line-height: 1.5;
-            margin-bottom: 1.25rem;
+            background: var(--bg); border: 1px solid var(--card-border);
+            padding: 1rem 1.2rem; border-radius: var(--radius-sm);
+            color: var(--text-dim); font-size: .85rem; line-height: 1.6;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .guidelines::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: var(--primary); border-radius: var(--radius-sm) 0 0 var(--radius-sm);
         }
 
         /* Stats bar */
         .stats-bar {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem;
-            margin-bottom: 1.25rem;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+            margin-bottom: 1.5rem;
         }
         .stat-chip {
-            background: var(--surface); border-radius: var(--radius-sm);
-            padding: .6rem .8rem; text-align: center;
+            background: var(--bg); border-radius: var(--radius-sm);
+            padding: 1rem; text-align: center;
             border: 1px solid var(--card-border);
+            transition: border-color .2s;
         }
-        .stat-chip .stat-value { font-size: 1.25rem; font-weight: 700; }
-        .stat-chip .stat-label { font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-top: .15rem; }
+        .stat-chip:hover { border-color: var(--text-muted); }
+        .stat-chip .stat-value { font-size: 1.5rem; font-weight: 600; color: var(--text); }
+        .stat-chip .stat-label { font-size: .75rem; color: var(--text-dim); font-weight: 500; margin-top: .3rem; }
 
         /* ============================================================
            Dashboard
            ============================================================ */
-        #dashboard .card { max-width: 580px; }
+        #dashboard .card { max-width: 640px; margin: 2rem auto; }
+        #dashboard {
+            overflow-y: auto; padding: 1rem;
+            align-items: flex-start;
+        }
+
+        /* Collection Plan */
+        .plan-section {
+            margin-top: 1.25rem; margin-bottom: 1.25rem;
+        }
+        .plan-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: .75rem;
+        }
+        .plan-header h2 {
+            font-size: .95rem; font-weight: 600; color: var(--text);
+            display: flex; align-items: center; gap: .4rem;
+        }
+        .plan-toggle {
+            background: none; border: 1px solid var(--card-border);
+            color: var(--text-dim); font-family: inherit; font-size: .75rem;
+            padding: .3rem .6rem; border-radius: var(--radius-sm);
+            cursor: pointer; transition: all .2s;
+        }
+        .plan-toggle:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* Overall progress */
+        .overall-progress {
+            background: var(--bg); border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm); padding: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .overall-progress .op-header {
+            display: flex; justify-content: space-between; align-items: baseline;
+            margin-bottom: .8rem;
+        }
+        .overall-progress .op-title { font-size: .9rem; font-weight: 500; color: var(--text); }
+        .overall-progress .op-numbers { font-size: .9rem; font-weight: 500; color: var(--text-muted); }
+        .progress-bar-track {
+            width: 100%; height: 6px; background: var(--surface);
+            border-radius: 3px; overflow: hidden; border: 1px solid var(--card-border);
+        }
+        .progress-bar-fill {
+            height: 100%; border-radius: 3px;
+            background: var(--primary);
+            transition: width .6s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 0;
+        }
+        .progress-bar-fill.complete {
+            background: var(--success);
+        }
+
+        /* Condition rows */
+        .condition-list { display: flex; flex-direction: column; gap: .75rem; }
+        .condition-row {
+            background: var(--bg); border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm); padding: .8rem 1rem;
+            transition: all .2s;
+        }
+        .condition-row:hover { border-color: var(--text-muted); }
+        .condition-row.recommended {
+            border-color: var(--primary);
+            background: var(--primary-dim);
+        }
+        .cond-top {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: .5rem;
+        }
+        .cond-label {
+            font-size: .85rem; font-weight: 500;
+            display: flex; align-items: center; gap: .5rem;
+        }
+        .cond-badge {
+            font-size: .7rem; padding: .15rem .5rem;
+            border-radius: 6px; font-weight: 600;
+        }
+        .cond-badge.done { background: var(--success-dim); color: var(--success); }
+        .cond-badge.next { background: var(--primary); color: #fff; }
+        .cond-nums {
+            font-size: .8rem; color: var(--text-dim);
+        }
+        .cond-nums strong { color: var(--text); font-weight: 600; }
+        .cond-bar {
+            height: 4px; background: var(--surface);
+            border-radius: 2px; overflow: hidden;
+        }
+        .cond-bar-fill {
+            height: 100%; border-radius: 2px;
+            transition: width .6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Recommendation card */
+        .rec-card {
+            background: var(--bg);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-sm);
+            padding: 1rem; margin-top: 1rem;
+            font-size: .85rem; color: var(--text); line-height: 1.5;
+            position: relative;
+            overflow: hidden;
+        }
+        .rec-card::before {
+             content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+             background: var(--primary);
+        }
+        .rec-card strong { color: var(--text); font-weight: 600; }
+
+        .plan-collapsed .condition-list,
+        .plan-collapsed .rec-card,
+        .plan-collapsed .overall-progress { display: none; }
 
         /* ============================================================
            Tracker UI (fullscreen)
            ============================================================ */
         #tracker-ui {
             position: fixed; inset: 0; background: var(--bg); z-index: 50;
+            overflow: hidden;
         }
 
         /* Webcam preview */
@@ -315,17 +425,38 @@
             <!-- Dataset stats -->
             <div class="stats-bar" id="dataset-stats">
                 <div class="stat-chip">
-                    <div class="stat-value" id="stat-sessions">—</div>
+                    <div class="stat-value" id="stat-sessions">--</div>
                     <div class="stat-label">Sessions</div>
                 </div>
                 <div class="stat-chip">
-                    <div class="stat-value" id="stat-frames">—</div>
+                    <div class="stat-value" id="stat-frames">--</div>
                     <div class="stat-label">Total Frames</div>
                 </div>
                 <div class="stat-chip">
-                    <div class="stat-value" id="stat-users">—</div>
+                    <div class="stat-value" id="stat-users">--</div>
                     <div class="stat-label">Users</div>
                 </div>
+            </div>
+
+            <!-- Collection Plan -->
+            <div class="plan-section plan-collapsed" id="plan-section">
+                <div class="plan-header">
+                    <h2>Collection Plan <span id="plan-summary" style="font-weight:400;font-size:.8rem;color:var(--text-muted)"></span></h2>
+                    <button class="plan-toggle" id="plan-toggle">Expand</button>
+                </div>
+                <div class="overall-progress" id="overall-progress">
+                    <div class="op-header">
+                        <span class="op-title">Overall Progress</span>
+                        <span class="op-numbers" id="op-numbers">-- / --</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="op-bar" style="width:0%"></div>
+                    </div>
+                </div>
+                <div class="condition-list" id="condition-list">
+                    <!-- Filled by JS -->
+                </div>
+                <div class="rec-card" id="rec-card" style="display:none"></div>
             </div>
 
             <div class="form-row">
@@ -550,15 +681,110 @@
         // ---- connect socket ----
         socket = io();
 
+        // ---- plan toggle ----
+        $('plan-toggle').addEventListener('click', () => {
+            const sec = $('plan-section');
+            const collapsed = sec.classList.toggle('plan-collapsed');
+            $('plan-toggle').textContent = collapsed ? 'Expand' : 'Collapse';
+        });
+
         // ---- fetch dataset stats on load ----
-        fetch('/api/dataset_stats')
-            .then(r => r.json())
-            .then(s => {
-                $('stat-sessions').textContent = s.total_sessions;
-                $('stat-frames').textContent = s.total_frames.toLocaleString();
-                $('stat-users').textContent = Object.keys(s.users).length;
-            })
-            .catch(() => {});
+        function fetchStats() {
+            fetch('/api/dataset_stats')
+                .then(r => r.json())
+                .then(renderDashboardStats)
+                .catch(() => {});
+        }
+
+        const COND_ICONS = {
+            standard:       '&#9673;',
+            dim_lighting:   '&#9790;',
+            bright_lighting:'&#9728;',
+            slouching:      '&#8645;',
+            head_movement:  '&#8634;',
+        };
+        const COND_COLORS = {
+            standard:       'var(--primary)',
+            dim_lighting:   '#8b5cf6',
+            bright_lighting:'#f59e0b',
+            slouching:      '#06b6d4',
+            head_movement:  '#ec4899',
+        };
+
+        function renderDashboardStats(s) {
+            $('stat-sessions').textContent = s.total_sessions;
+            $('stat-frames').textContent = s.total_frames.toLocaleString();
+            $('stat-users').textContent = Object.keys(s.users).length;
+
+            if (!s.plan) return;
+            const p = s.plan;
+
+            // Inline summary (visible when collapsed)
+            const done = p.conditions.filter(c => c.done).length;
+            $('plan-summary').textContent = '(' + p.overall_pct + '% complete, ' + done + '/' + p.conditions.length + ' conditions met)';
+
+            // Overall bar
+            $('op-numbers').textContent = p.overall_collected.toLocaleString() + ' / ' + p.overall_target.toLocaleString();
+            const opBar = $('op-bar');
+            opBar.style.width = p.overall_pct + '%';
+            if (p.overall_pct >= 100) opBar.classList.add('complete');
+
+            // Conditions
+            const listEl = $('condition-list');
+            listEl.innerHTML = '';
+
+            // Find which condition needs the most work (lowest pct)
+            let neediest = null;
+            let lowestPct = 101;
+            for (const c of p.conditions) {
+                if (!c.done && c.pct < lowestPct) {
+                    lowestPct = c.pct;
+                    neediest = c.name;
+                }
+            }
+
+            for (const c of p.conditions) {
+                const color = COND_COLORS[c.name] || 'var(--primary)';
+                const icon  = COND_ICONS[c.name] || '';
+                const isRec = c.name === neediest;
+
+                const row = document.createElement('div');
+                row.className = 'condition-row' + (isRec ? ' recommended' : '');
+                row.innerHTML = `
+                    <div class="cond-top">
+                        <span class="cond-label">
+                            <span>${icon}</span> ${c.label}
+                            ${c.done ? '<span class="cond-badge done">DONE</span>' : ''}
+                            ${isRec ? '<span class="cond-badge next">DO NEXT</span>' : ''}
+                        </span>
+                        <span class="cond-nums">
+                            <strong>${c.collected.toLocaleString()}</strong> / ${c.target.toLocaleString()}
+                            ${!c.done ? ' &middot; <em>' + c.remaining.toLocaleString() + ' needed</em>' : ''}
+                        </span>
+                    </div>
+                    <div class="cond-bar">
+                        <div class="cond-bar-fill" style="width:${c.pct}%;background:${c.done ? 'var(--success)' : color}"></div>
+                    </div>
+                `;
+                listEl.appendChild(row);
+            }
+
+            // Recommendation card
+            const recEl = $('rec-card');
+            if (neediest) {
+                const nc = p.conditions.find(c => c.name === neediest);
+                recEl.style.display = 'block';
+                recEl.innerHTML = `<strong>Next up:</strong> Collect <strong>${nc.remaining.toLocaleString()}</strong> more frames in <strong>${nc.label}</strong> mode. `
+                    + (p.current_users < p.min_users
+                        ? `Also need <strong>${p.min_users - p.current_users}</strong> more participant(s) for diversity.`
+                        : 'User diversity looks good!');
+            } else {
+                recEl.style.display = 'block';
+                recEl.innerHTML = '<strong>All conditions met!</strong> You have enough data to begin training.';
+            }
+        }
+
+        fetchStats();
 
         // ---- camera ----
         async function startCamera() {
@@ -781,17 +1007,12 @@
 
         socket.on('session_saved', data => {
             if (data.status === 'success') {
-                alert(`✅ Saved ${data.frames} frames to ${data.file}`);
+                alert('Saved ' + data.frames + ' frames to ' + data.file);
             } else if (data.status === 'empty') {
                 alert('No data to save.');
             }
             show(dashboard);
-            // Refresh stats
-            fetch('/api/dataset_stats').then(r=>r.json()).then(s => {
-                $('stat-sessions').textContent = s.total_sessions;
-                $('stat-frames').textContent = s.total_frames.toLocaleString();
-                $('stat-users').textContent = Object.keys(s.users).length;
-            }).catch(()=>{});
+            fetchStats();
         });
 
         btnDiscard.addEventListener('click', () => {
