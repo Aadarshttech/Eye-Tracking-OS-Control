@@ -17,6 +17,7 @@ import glob
 import math
 import os
 import random
+import sys
 import time
 
 import cv2
@@ -49,14 +50,12 @@ LEFT_IRIS = [474, 475, 476, 477]
 RIGHT_IRIS = [469, 470, 471, 472]
 
 # EAR: (outer, upper1, upper2, inner, lower1, lower2)
-LEFT_EAR_IDX = (33, 160, 158, 133, 153, 144)
-RIGHT_EAR_IDX = (263, 387, 385, 362, 380, 373)
+LEFT_EAR_IDX = (263, 387, 385, 362, 380, 373)
+RIGHT_EAR_IDX = (33, 160, 158, 133, 153, 144)
 
-# Eye corners for gaze-ratio computation
-LEFT_EYE_INNER, LEFT_EYE_OUTER = 133, 33
-LEFT_EYE_TOP, LEFT_EYE_BOTTOM = 159, 145
-RIGHT_EYE_INNER, RIGHT_EYE_OUTER = 362, 263
-RIGHT_EYE_TOP, RIGHT_EYE_BOTTOM = 386, 374
+# Full eye contour (for robust bounding box)
+LEFT_EYE_CONTOUR = [263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249]
+RIGHT_EYE_CONTOUR = [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7]
 
 # Face-oval landmarks (for approximate face area)
 FACE_OVAL = [
@@ -146,20 +145,23 @@ def compute_ear(landmarks, idx):
     return float((v1 + v2) / (2.0 * horiz))
 
 
-def compute_gaze_ratio(landmarks, iris_idx, inner, outer, top, bottom):
-    """Normalised iris position within the eye bounding box.
+def compute_gaze_ratio(landmarks, iris_idx, eye_contour_idx):
+    """Normalised iris position within the eye contour bounding box.
+
+    Uses the FULL eye contour (16 landmarks) to compute the bounding box,
+    ensuring the iris always falls within it.
 
     Returns (h_ratio, v_ratio) each in [0, 1].
-    h_ratio ≈ 0 → looking toward the inner corner
-    v_ratio ≈ 0 → looking up
+    h_ratio ~ 0 = looking left in image, h_ratio ~ 1 = looking right in image.
+    v_ratio ~ 0 = looking up, v_ratio ~ 1 = looking down.
     """
     ix = sum(landmarks[i].x for i in iris_idx) / len(iris_idx)
     iy = sum(landmarks[i].y for i in iris_idx) / len(iris_idx)
 
-    x_lo = min(landmarks[inner].x, landmarks[outer].x)
-    x_hi = max(landmarks[inner].x, landmarks[outer].x)
-    y_lo = min(landmarks[top].y, landmarks[bottom].y)
-    y_hi = max(landmarks[top].y, landmarks[bottom].y)
+    xs = [landmarks[i].x for i in eye_contour_idx]
+    ys = [landmarks[i].y for i in eye_contour_idx]
+    x_lo, x_hi = min(xs), max(xs)
+    y_lo, y_hi = min(ys), max(ys)
 
     h = (ix - x_lo) / max(x_hi - x_lo, 1e-7)
     v = (iy - y_lo) / max(y_hi - y_lo, 1e-7)
@@ -270,6 +272,13 @@ def generate_targets(mode, count, screen_w, screen_h, padding=80):
 def index():
     return render_template("index.html")
 
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
 
 @app.route("/api/dataset_stats")
 def dataset_stats():
@@ -303,6 +312,38 @@ def dataset_stats():
         except Exception:
             continue
 
+    # ------------------------------------------------------------------
+    # Collection plan: define target frame counts per condition
+    # ------------------------------------------------------------------
+    CONDITION_TARGETS = {
+        "standard":        5000,
+    }
+    OVERALL_TARGET = 5000
+    MIN_USERS = 1
+
+    plan = dict(
+        overall_target=OVERALL_TARGET,
+        overall_collected=stats["total_frames"],
+        overall_remaining=max(0, OVERALL_TARGET - stats["total_frames"]),
+        overall_pct=min(100, round(stats["total_frames"] / OVERALL_TARGET * 100, 1)) if OVERALL_TARGET else 0,
+        min_users=MIN_USERS,
+        current_users=len(stats["users"]),
+        conditions=[],
+    )
+
+    for cond, target in CONDITION_TARGETS.items():
+        collected = stats["session_types"].get(cond, 0)
+        plan["conditions"].append(dict(
+            name=cond,
+            label=cond.replace("_", " ").title(),
+            target=target,
+            collected=collected,
+            remaining=max(0, target - collected),
+            pct=min(100, round(collected / target * 100, 1)) if target else 0,
+            done=collected >= target,
+        ))
+
+    stats["plan"] = plan
     return jsonify(stats)
 
 
@@ -443,10 +484,20 @@ def handle_process_frame(data):
     iod = math.sqrt((lx - rx) ** 2 + (ly - ry) ** 2 + (lz - rz) ** 2)
 
     # --- gaze ratios --------------------------------------------------------
-    lg_h, lg_v = compute_gaze_ratio(
-        lm, LEFT_IRIS, LEFT_EYE_INNER, LEFT_EYE_OUTER, LEFT_EYE_TOP, LEFT_EYE_BOTTOM)
-    rg_h, rg_v = compute_gaze_ratio(
-        lm, RIGHT_IRIS, RIGHT_EYE_INNER, RIGHT_EYE_OUTER, RIGHT_EYE_TOP, RIGHT_EYE_BOTTOM)
+    lg_h, lg_v = compute_gaze_ratio(lm, LEFT_IRIS, LEFT_EYE_CONTOUR)
+    rg_h, rg_v = compute_gaze_ratio(lm, RIGHT_IRIS, RIGHT_EYE_CONTOUR)
+
+    # DEBUG: print actual values on first frame of session
+    if session_state.get("frames_collected", 0) == 0 and not session_state.get("_debug_printed"):
+        session_state["_debug_printed"] = True
+        l_ix = sum(lm[i].x for i in LEFT_IRIS) / len(LEFT_IRIS)
+        l_xs = [lm[i].x for i in LEFT_EYE_CONTOUR]
+        r_ix = sum(lm[i].x for i in RIGHT_IRIS) / len(RIGHT_IRIS)
+        r_xs = [lm[i].x for i in RIGHT_EYE_CONTOUR]
+        print(f"[DEBUG] LEFT: iris_x={l_ix:.6f}, contour_x=[{min(l_xs):.6f}, {max(l_xs):.6f}], h={lg_h:.6f}")
+        print(f"[DEBUG] RIGHT: iris_x={r_ix:.6f}, contour_x=[{min(r_xs):.6f}, {max(r_xs):.6f}], h={rg_h:.6f}")
+        print(f"[DEBUG] LEFT contour x values: {[f'{x:.5f}' for x in l_xs]}")
+        print(f"[DEBUG] RIGHT contour x values: {[f'{x:.5f}' for x in r_xs]}")
 
     # --- EAR ----------------------------------------------------------------
     l_ear = compute_ear(lm, LEFT_EAR_IDX)
@@ -512,7 +563,21 @@ if __name__ == "__main__":
         print("Download face_landmarker.task and place it in the models/ directory.")
     else:
         landmarker = setup_landmarker()
+        use_https = os.getenv("EYE_TRACK_USE_HTTPS", "0") == "1" or "--https" in sys.argv
+        host = os.getenv("EYE_TRACK_HOST", "0.0.0.0")
+        port = int(os.getenv("EYE_TRACK_PORT", "5000"))
+
         print(f"[OK] MediaPipe loaded from {LANDMARKER_PATH}")
         print(f"[OK] Dataset dir: {DATA_DIR}")
-        print(f"[OK] Server starting → http://localhost:5000")
-        socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
+        if use_https:
+            print(f"[OK] Server starting -> https://{host}:{port} (adhoc cert)")
+            socketio.run(
+                app,
+                host=host,
+                port=port,
+                ssl_context="adhoc",
+                allow_unsafe_werkzeug=True,
+            )
+        else:
+            print(f"[OK] Server starting -> http://{host}:{port}")
+            socketio.run(app, host=host, port=port, allow_unsafe_werkzeug=True)
