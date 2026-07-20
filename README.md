@@ -27,15 +27,17 @@ Eye-Tracking-OS-Control/
 │
 ├── src/                      # 💻 Core Source Code
 │   ├── web_collector.py      # Flask Web UI for data collection
-│   ├── data_collector.py     # Legacy OpenCV data collector
 │   ├── train_gaze_model.py   # AI Training Script (TensorFlow)
-│   ├── eye_tracker.py        # Real-time OS mouse control
+│   ├── test_tracking.py      # HUD Visualizer for model testing
+│   ├── gaze_mouse.py         # Real-time OS mouse controller
 │   └── templates/            # HTML/CSS for Web UI
 │
 ├── models/                   # 🧠 ML Models & Weights
 │   ├── face_landmarker.task  # MediaPipe landmark model
-│   ├── best_eye_model.keras  # Saved Keras model
-│   └── eye_model.tflite      # Optimized TFLite model for speed
+│   ├── gaze_model.keras      # Saved Keras Neural Network
+│   ├── eye_model.tflite      # Optimized TFLite model for speed
+│   ├── feature_scaler.pkl    # Data scaler
+│   └── training_meta.pkl     # Training metadata
 │
 ├── docs/                     # 📚 Documentation
 │   └── eye_tracking_roadmap.pdf
@@ -61,10 +63,16 @@ python src/train_gaze_model.py
 ```
 *This will generate a highly optimized `eye_model.tflite` in the `models/` folder.*
 
-### 3. Control Your Mouse!
+### 3. Test and Calibrate
+Use the HUD Visualizer to test the model's accuracy in real-time:
+```bash
+python src/test_tracking.py
+```
+
+### 4. Control Your Mouse!
 Run the live tracker to take control of your OS:
 ```bash
-python src/eye_tracker.py
+python src/gaze_mouse.py
 ```
 
 ---
@@ -80,14 +88,3 @@ python src/eye_tracker.py
 <div align="center">
   <i>Built with ❤️ by Aadarsh</i>
 </div>
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
