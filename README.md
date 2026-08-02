@@ -1,90 +1,74 @@
-<div align="center">
-  <img src="https://img.shields.io/badge/Python-3.11+-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/TensorFlow-2.15-orange.svg" alt="TensorFlow">
-  <img src="https://img.shields.io/badge/Flask-Web%20UI-green.svg" alt="Flask">
-  <img src="https://img.shields.io/badge/MediaPipe-Face%20Landmarks-blueviolet.svg" alt="MediaPipe">
-  
-  <h1>👁️ Eye Tracking OS Control 👁️</h1>
-  <p><b>A Machine Learning project that lets you control your computer mouse using only your eyes!</b></p>
-</div>
+# AI-Powered Eye Tracking for OS Control
+
+Welcome to the **Eye Tracking OS Control** project! This repository contains a complete, end-to-end deep learning pipeline that allows you to control your Windows computer mouse purely using your eyes.
+
+By fusing Google's real-time **MediaPipe Face Mesh**, a custom-trained **TensorFlow MLP**, and advanced signal filtering, this software achieves high-accuracy gaze tracking with a standard webcam.
 
 ---
 
-## 🌟 Overview
-Welcome to the Eye Tracking OS Control project! This tool uses your standard webcam to track your eye movements, processes the data using a custom TensorFlow Neural Network, and translates your gaze into real-time on-screen mouse movements.
+## 🚀 The Three-Step Flow
 
-**Features:**
-- 🎨 **Web-Based Data Collector:** A beautiful, responsive Flask app to comfortably collect your calibration data.
-- 🧠 **Deep Learning:** Uses Google MediaPipe for sub-millimeter facial landmarks and a custom TensorFlow model to predict screen coordinates.
-- 🖱️ **Live OS Control:** Take over your Windows mouse pointer hands-free.
+To get this project running on your local machine, follow the three phases below in order. We have specifically designed this repository so you don't need to dig through unnecessary code—just follow the flow.
 
----
+### Phase 1: Data Collection
+Before you can control the mouse, the neural network needs to learn your specific eye geometry. 
+We provide a local Flask-based web collector that captures your gaze data safely and quickly.
 
-## 📁 Repository Structure
+1. Run the web collector:
+   ```bash
+   python src/web_collector.py
+   ```
+2. Open your browser to `http://localhost:5000`.
+3. Follow the on-screen red dots. The software will automatically capture your MediaPipe landmarks and map them to the screen coordinates, saving everything to a CSV file in the `dataset/` folder.
 
-```text
-Eye-Tracking-OS-Control/
-│
-├── src/                      # 💻 Core Source Code
-│   ├── web_collector.py      # Flask Web UI for data collection
-│   ├── train_gaze_model.py   # AI Training Script (TensorFlow)
-│   ├── test_tracking.py      # HUD Visualizer for model testing
-│   ├── gaze_mouse.py         # Real-time OS mouse controller
-│   └── templates/            # HTML/CSS for Web UI
-│
-├── models/                   # 🧠 ML Models & Weights
-│   ├── face_landmarker.task  # MediaPipe landmark model
-│   ├── gaze_model.keras      # Saved Keras Neural Network
-│   ├── eye_model.tflite      # Optimized TFLite model for speed
-│   ├── feature_scaler.pkl    # Data scaler
-│   └── training_meta.pkl     # Training metadata
-│
-├── docs/                     # 📚 Documentation
-│   └── eye_tracking_roadmap.pdf
-│
-└── dataset/                  # 📊 CSV Training Data (Git Ignored)
-```
+### Phase 2: Model Training
+Once you have collected your training data (we recommend at least 3-4 sessions for high accuracy), it's time to train your personal AI.
 
----
+We use a highly optimized Multi-Layer Perceptron (MLP) with a Cosine-Decaying Learning Rate Scheduler and synthetic Gaussian Noise data augmentation to achieve absolute minimal error.
 
-## 🚀 How to Use
+1. Run the training pipeline:
+   ```bash
+   python src/train_gaze_model_v3.py
+   ```
+2. The script will automatically load all CSVs in your `dataset/` folder, train the model, and export a lightweight `eye_model.tflite` file.
 
-### 1. Collect Data
-Start the web UI server to collect your personal calibration data:
-```bash
-python src/web_collector.py
-```
-*Open your browser to `http://localhost:5000` and follow the on-screen target dot.*
+*For a deeper dive into hyperparameter tuning and model architectures, please see our [Training Guide](docs/guide_for_training.md).*
 
-### 2. Train the AI Model
-Once you've collected enough data, train the neural network:
-```bash
-python src/train_gaze_model.py
-```
-*This will generate a highly optimized `eye_model.tflite` in the `models/` folder.*
+### Phase 3: AI Mouse Control
+With your `.tflite` model generated, you are ready to control your computer.
 
-### 3. Test and Calibrate
-Use the HUD Visualizer to test the model's accuracy in real-time:
-```bash
-python src/test_tracking.py
-```
-
-### 4. Control Your Mouse!
-Run the live tracker to take control of your OS:
-```bash
-python src/gaze_mouse.py
-```
+1. Launch the AI mouse controller:
+   ```bash
+   python src/gaze_mouse.py
+   ```
+2. The system will prompt you to do a quick 9-point session calibration. Look at the edges and center of your screen as instructed.
+3. You now have full control of your mouse! 
+   - **Look** to move the cursor.
+   - **Blink** to click. (Blink detection is handled automatically via Eye Aspect Ratio geometry).
 
 ---
 
-## 🛠️ Architecture
+## 🛠️ Setup & Installation
 
-1. **Webcam Input** ➔ **MediaPipe** extracts 478 3D facial landmarks (including precise iris coordinates).
-2. **Feature Engineering** ➔ Head pose (Pitch, Yaw, Roll) and normalized eye centers are calculated.
-3. **Neural Network** ➔ The features are fed into our custom TensorFlow Dense network.
-4. **Output** ➔ The network outputs predicted (X, Y) screen coordinates.
-5. **Action** ➔ `pyautogui` moves your system cursor.
+### Requirements
+- Python 3.12+
+- A standard 720p/1080p Webcam
 
-<div align="center">
-  <i>Built with ❤️ by Aadarsh</i>
-</div>
+### Installation
+Clone the repository and install the required dependencies:
+```bash
+git clone https://github.com/Aadarshttech/Eye-Tracking-OS-Control.git
+cd Eye-Tracking-OS-Control
+pip install -r requirements.txt
+```
+*(Note: If you are setting up the web collector for remote access, you may also run `npm install` to utilize `localtunnel` as defined in `package.json`.)*
+
+---
+
+## 🧠 Architecture Overview
+- **Frontend/Capture:** OpenCV & MediaPipe (Extracts a 468-point face mesh, refined to 478 with iris tracking).
+- **Backend/AI:** TensorFlow & Keras (Residual MLP with dropout and batch normalization).
+- **Filtering:** 1 Euro Filter (Eliminates high-frequency webcam jitter).
+- **Actuation:** PyAutoGUI (Translates mathematical coordinates to physical OS cursor movements).
+
+*This project was developed for the final semester defense and successfully lowered the gaze tracking error to 27.4 pixels on a standard 1080p display.*
