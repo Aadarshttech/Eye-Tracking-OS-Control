@@ -1,4 +1,3 @@
-
 <div align="center">
 
 # ??? AI-Powered Eye Tracking for OS Control
@@ -26,7 +25,7 @@ By fusing **Google's real-time MediaPipe Face Mesh**, a heavily optimized **Tens
 - **Look to Move:** Seamlessly drives the OS cursor by translating head pose and iris bounds.
 - **Blink to Click:** Solves the "Midas Touch" problem using Eye Aspect Ratio (EAR) temporal blink detection for reliable left-clicking.
 - **Anti-Jitter:** Incorporates adaptive low-pass filtering to maintain cursor stability during reading (fixation) without introducing input lag during quick glances.
-- **Hardware Agnostic:** Fully operates on standard CPU architectures achieving $\sim inference latency (50+ theoretical FPS).
+- **Hardware Agnostic:** Fully operates on standard CPU architectures achieving ~19ms inference latency (50+ theoretical FPS).
 
 ---
 
@@ -38,9 +37,9 @@ We have designed this repository to be strictly linear. Follow the three phases 
 Before the neural network can map your gaze, it needs to learn your specific eye geometry. We provide a Flask-based web collector for rapid, safe dataset generation.
 
 1. Launch the web collector:
-   \\\ash
+   `ash
    python src/web_collector.py
-   \\\
+   `
 2. Navigate to http://localhost:5000 in your browser.
 3. Follow the on-screen red dots. The software automatically captures your 478-point MediaPipe mesh and logs your screen coordinates into a CSV inside the dataset/ folder. *(Aim for 3-4 sessions for high accuracy).*
 
@@ -48,9 +47,9 @@ Before the neural network can map your gaze, it needs to learn your specific eye
 Once the training data is collected, it's time to train the MLP Large v2 model. Our architecture employs **Cosine-Decaying Learning Rates**, **Huber Loss**, and **Synthetic Gaussian Noise** data augmentation to prevent overfitting.
 
 1. Run the training script:
-   \\\ash
+   `ash
    python src/train_gaze_model_v3.py
-   \\\
+   `
 2. The pipeline loads all CSVs, triples the dataset size via augmentation, and exports a lightweight eye_model.tflite model.
 
 > ?? *For a deep dive into hyperparameter tuning and model architectures, please see our [Comprehensive Training Guide](docs/guide_for_training.md).*
@@ -59,9 +58,9 @@ Once the training data is collected, it's time to train the MLP Large v2 model. 
 With your trained model exported, you are ready to control your operating system.
 
 1. Launch the actuation software:
-   \\\ash
+   `ash
    python src/gaze_mouse.py
-   \\\
+   `
 2. Complete the rapid **9-point per-session calibration**. This executes a Polynomial Ridge Regression that dynamically maps the AI's raw output to your specific monitor boundaries, completely eliminating edge-bias.
 3. You now have full control of your mouse!
 
@@ -76,11 +75,11 @@ With your trained model exported, you are ready to control your operating system
 
 ### Installation
 Clone the repository and install the strict dependencies:
-\\\ash
+`ash
 git clone https://github.com/Aadarshttech/Eye-Tracking-OS-Control.git
 cd Eye-Tracking-OS-Control
 pip install -r requirements.txt
-\\\
+`
 *(Optional: Run 
 pm install if you wish to use localtunnel for remote data collection as defined in package.json.)*
 
@@ -112,4 +111,3 @@ This repository represents the final semester defense project for the B.Tech AI 
 - **Kushal Kunwar** (21742)
 
 *For our full technical thesis and defense documentation, see the [Final Defense Report PDF](docs/Final_Defense_Report.pdf).*
-
