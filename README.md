@@ -93,13 +93,6 @@ The pipeline executes entirely within 19 milliseconds per frame:
 4. **Filtering:** The One Euro Filter adapts to velocity, destroying high-frequency webcam jitter.
 5. **Actuation:** PyAutoGUI executes physical cursor movement and triggers clicks upon detecting EAR threshold drops.
 
-<div align="center">
-  <img src="docs/images/target_dist.png" width="45%" />
-  <img src="docs/images/ear_dist.png" width="45%" />
-  <br>
-  <em>(Left: Gaze distribution during training. Right: EAR Blink Separation Thresholds)</em>
-</div>
-
 ---
 
 ## 👨‍💻 Project Team & Academic Origin
