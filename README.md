@@ -93,13 +93,4 @@ The pipeline executes entirely within 19 milliseconds per frame:
 4. **Filtering:** The One Euro Filter adapts to velocity, destroying high-frequency webcam jitter.
 5. **Actuation:** PyAutoGUI executes physical cursor movement and triggers clicks upon detecting EAR threshold drops.
 
----
 
-## 👨‍💻 Project Team & Academic Origin
-This repository represents the final semester defense project for the B.Tech AI (Batch 2024) program at Kathmandu University.
-- **Aadarsha Pandit** (21747)
-- **Yudhin Khanal** (21740)
-- **Ishan Pandey** (21746)
-- **Kushal Kunwar** (21742)
-
-*For our full technical thesis and defense documentation, see the [Final Defense Report PDF](docs/Final_Defense_Report.pdf).*
